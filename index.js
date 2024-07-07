@@ -1,18 +1,14 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
 const express = require("express");
 const axios = require("axios");
 
 const app = express();
 app.use(express.json());
+require("dotenv").config();
 
-const { WEBHOOK_VERIFY_TOKEN, GRAPH_API_TOKEN, PORT, GOOGLE_API_KEY } =
-  process.env;
+const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN;
+const GRAPH_API_TOKEN = process.env.GRAPH_API_TOKEN;
+const PORT = process.env.PORT;
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
 const handleMessage = async (userMessage) => {
   // Check if user message starts with "hey"
@@ -126,7 +122,7 @@ app.get("/webhook", (req, res) => {
 
 app.get("/", (req, res) => {
   res.send(`<pre>Nothing to see here.
-Checkout README.md to start.</pre>`);
+Checkout README.md to start.${WEBHOOK_VERIFY_TOKEN ? "exirs" : "null"}</pre>`);
 });
 
 app.listen(PORT, () => {
