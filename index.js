@@ -9,7 +9,7 @@ app.use(bodyParser.json());
 const token = process.env.WHATSAPP_TOKEN;
 const verifyToken = process.env.VERIFY_TOKEN;
 
-app.listen(process.env.PORT, () => {
+app.listen(process.env.PORT || 5000, () => {
   console.log(`Webhook is listening on port ${process.env.PORT}`);
 });
 
