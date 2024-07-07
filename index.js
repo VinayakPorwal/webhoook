@@ -122,7 +122,7 @@ app.get("/webhook", (req, res) => {
 
 app.get("/", (req, res) => {
   res.send(`<pre>Nothing to see here.
-Checkout README.md to start.${WEBHOOK_VERIFY_TOKEN ? "exirs" : "null"}</pre>`);
+Checkout README.md to start.${WEBHOOK_VERIFY_TOKEN}</pre>`);
 });
 
 app.listen(PORT, () => {
