@@ -10,35 +10,30 @@ const GRAPH_API_TOKEN = process.env.GRAPH_API_TOKEN;
 const PORT = process.env.PORT;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
-// Create a map to store chat history for each user
 const chatHistory = new Map();
 
 const handleMessage = async (userMessage, userId) => {
-  // Get or initialize chat history for the user
+  // Retrieve or initialize chat history for the user
   if (!chatHistory.has(userId)) {
     chatHistory.set(userId, []);
   }
-  const userChatHistory = chatHistory.get(userId);
+  const userHistory = chatHistory.get(userId);
 
-  // Add the new message to the chat history
-  userChatHistory.push({ role: "user", content: userMessage });
-
-  // Keep only the last 10 messages
-  while (userChatHistory.length > 10) {
-    userChatHistory.shift();
-  }
+  // Add user message to history
+  userHistory.push({ role: "user", content: userMessage });
 
   // Prepare the request data with chat history
   const requestData = {
     contents: [
       {
-        parts: userChatHistory.map((msg) => ({
-          text: `${msg.role}: ${msg.content}`,
-        })),
-      },
-      {
         parts: [
-          { text: `assistant: Based on our conversation, here's my response:` },
+          {
+            text: "You are a helpful assistant. Respond to the user's message based on the conversation history.",
+          },
+          ...userHistory
+            .slice(-10)
+            .map((msg) => ({ text: `${msg.role}: ${msg.content}` })),
+          { text: "assistant: " },
         ],
       },
     ],
@@ -59,12 +54,12 @@ const handleMessage = async (userMessage, userId) => {
     // Handle API response
     const assistantResponse = response.data.candidates[0].content.parts[0].text;
 
-    // Add the assistant's response to the chat history
-    userChatHistory.push({ role: "assistant", content: assistantResponse });
+    // Add assistant response to history
+    userHistory.push({ role: "assistant", content: assistantResponse });
 
-    // Keep only the last 10 messages again
-    while (userChatHistory.length > 10) {
-      userChatHistory.shift();
+    // Trim history to keep only last 10 messages
+    while (userHistory.length > 10) {
+      userHistory.shift();
     }
 
     return assistantResponse;
@@ -75,22 +70,28 @@ const handleMessage = async (userMessage, userId) => {
 };
 
 app.post("/webhook", async (req, res) => {
+  // Log incoming messages
+  // console.log("Incoming webhook message:", JSON.stringify(req.body, null, 2));
+
+  // Check if the webhook request contains a message
   const message = req.body.entry?.[0]?.changes[0]?.value?.messages?.[0];
 
+  // Check if the incoming message contains text
   if (message?.type === "text") {
+    // Extract the business number to send the reply from it
     const businessPhoneNumberId =
       req.body.entry?.[0].changes?.[0].value?.metadata?.phone_number_id;
     const from = message.from;
     const messageText = message.text.body.toLowerCase();
 
+    // Determine the response based on the message content
     let responseText;
-    if (messageText.startsWith("hey") || chatHistory.has(from)) {
-      responseText = await handleMessage(messageText, from);
-    } else {
-      return;
-    }
+    const userId = from; // Use the 'from' number as the user ID
+    responseText = await handleMessage(messageText, userId);
+    // "*Appointment Reminder* \n Hello Name,\n Your appointment has been scheduled on 24-11-2024,On Day shift. \n Thank you for using our service. \n Best regards, Petmatrix";
     console.log(responseText);
 
+    // Send the reply message
     await axios({
       method: "POST",
       url: `https://graph.facebook.com/v18.0/${businessPhoneNumberId}/messages`,
@@ -102,30 +103,50 @@ app.post("/webhook", async (req, res) => {
         to: from,
         text: { body: responseText },
         context: {
-          message_id: message.id,
+          message_id: message.id, // Shows the message as a reply to the original user message
         },
       },
     });
+
+    // Mark the incoming message as read
+    // await axios({
+    //   method: "POST",
+    //   url: `https://graph.facebook.com/v18.0/${businessPhoneNumberId}/messages`,
+    //   headers: {
+    //     Authorization: `Bearer ${GRAPH_API_TOKEN}`,
+    //   },
+    //   data: {
+    //     messaging_product: "whatsapp",
+    //     status: "read",
+    //     message_id: message.id,
+    //   },
+    // });
   }
 
   res.sendStatus(200);
 });
 
+// Accepts GET requests at the /webhook endpoint. You need this URL to setup webhook initially.
+// Info on verification request payload: https://developers.facebook.com/docs/graph-api/webhooks/getting-started#verification-requests
 app.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
+  // Check the mode and token sent are correct
   if (mode === "subscribe" && token === WEBHOOK_VERIFY_TOKEN) {
+    // Respond with 200 OK and challenge token from the request
     res.status(200).send(challenge);
     console.log("Webhook verified successfully!");
   } else {
+    // Respond with '403 Forbidden' if verify tokens do not match
     res.sendStatus(403);
   }
 });
 
-app.get("/", (req, res) => {
-  res.send(`<pre>Nothing to see here.
+app.get("/", async (req, res) => {
+  const data = await handleMessage("hey opal whatrsap");
+  res.send(`<pre>Nothing to see here. ${data}
 Checkout README.md to start.${WEBHOOK_VERIFY_TOKEN}</pre>`);
 });
 
