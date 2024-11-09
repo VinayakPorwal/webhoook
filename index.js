@@ -13,7 +13,6 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const COMPOSIO_API_KEY = process.env.COMPOSIO_API_KEY;
 
 const chatHistory = new Map();
-const emailAuthTokens = new Map(); // Store email authentication tokens
 
 // Email configuration
 const transporter = nodemailer.createTransport({
@@ -24,21 +23,6 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-const generateAuthToken = () => {
-  return Math.random().toString(36).substring(2, 15);
-};
-
-const sendAuthenticationEmail = async (email, authToken) => {
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: 'Authentication Token for WhatsApp Bot',
-    text: `Your authentication token is: ${authToken}\nPlease send this token to the WhatsApp bot to complete authentication.`
-  };
-
-  await transporter.sendMail(mailOptions);
-};
-
 const handleMessage = async (userMessage, userId) => {
   // Retrieve or initialize chat history for the user
   if (!chatHistory.has(userId)) {
@@ -46,38 +30,56 @@ const handleMessage = async (userMessage, userId) => {
   }
   const userHistory = chatHistory.get(userId);
 
-  // Check for email authentication command
-  if (userMessage.toLowerCase().startsWith('authenticate')) {
-    const email = userMessage.split(' ')[1];
-    if (email && email.includes('@')) {
-      const authToken = generateAuthToken();
-      emailAuthTokens.set(email, authToken);
-      await sendAuthenticationEmail(email, authToken);
-      return `Authentication email sent to ${email}. Please check your email and send the token to complete authentication.`;
-    }
-    return "Please provide a valid email address. Format: authenticate your@email.com";
-  }
+  // Check for email command
+  if (userMessage.toLowerCase().startsWith('/email')) {
+    const parts = userMessage.split(' ');
+    const email = parts[1];
+    const content = parts.slice(2).join(' ');
 
-  // Check if message is an authentication token
-  if (emailAuthTokens.size > 0 && /^[a-z0-9]+$/.test(userMessage)) {
-    for (const [email, token] of emailAuthTokens.entries()) {
-      if (token === userMessage) {
-        // Here you can integrate with Composio API
-        try {
-          const composioResponse = await axios.post('https://api.compos.io/authenticate', {
-            api_key: COMPOSIO_API_KEY,
-            email: email
-          });
-          emailAuthTokens.delete(email);
-          return `Successfully authenticated with Composio for ${email}!`;
-        } catch (error) {
-          console.error('Composio Authentication Error:', error.response?.data || error.message);
-          emailAuthTokens.delete(email); // Clean up the token if authentication fails
-          return `Authentication failed. Error: ${error.response?.data?.message || error.message}. Please try again with 'authenticate your@email.com'`;
-        }
-      }
+    if (!email || !email.includes('@')) {
+      return "Please provide a valid email address. Format: /email recipient@email.com your message";
     }
-    return "Invalid authentication token. Please try again.";
+
+    if (!content) {
+      return "Please provide a message to send. Format: /email recipient@email.com your message";
+    }
+
+    try {
+      // Use AI to generate email subject and enhanced message
+      const aiResponse = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GOOGLE_API_KEY}`,
+        {
+          contents: [{
+            parts: [{
+              text: `Write a professional email subject line and enhance the following message while maintaining its core meaning: ${content}. Return in format - Subject: <subject>\nMessage: <message>`
+            }]
+          }]
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          }
+        }
+      );
+
+      const aiText = aiResponse.data.candidates[0].content.parts[0].text;
+      const [subjectLine, messageLine] = aiText.split('\n');
+      const subject = subjectLine.replace('Subject:', '').trim();
+      const message = messageLine.replace('Message:', '').trim();
+
+      // Send the email
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: subject,
+        text: message
+      });
+
+      return `Email sent successfully to ${email}!`;
+    } catch (error) {
+      console.error("Error:", error.message);
+      return `Failed to send email: ${error.message}`;
+    }
   }
 
   // Add user message to history
@@ -143,13 +145,12 @@ app.post("/webhook", async (req, res) => {
     const businessPhoneNumberId =
       req.body.entry?.[0].changes?.[0].value?.metadata?.phone_number_id;
     const from = message.from;
-    const messageText = message.text.body.toLowerCase();
+    const messageText = message.text.body;
 
     // Determine the response based on the message content
     let responseText;
     const userId = from; // Use the 'from' number as the user ID
     responseText = await handleMessage(messageText, userId);
-    // "*Appointment Reminder* \n Hello Name,\n Your appointment has been scheduled on 24-11-2024,On Day shift. \n Thank you for using our service. \n Best regards, Petmatrix";
     console.log(responseText);
 
     // Send the reply message
@@ -168,20 +169,6 @@ app.post("/webhook", async (req, res) => {
         },
       },
     });
-
-    // Mark the incoming message as read
-    // await axios({
-    //   method: "POST",
-    //   url: `https://graph.facebook.com/v18.0/${businessPhoneNumberId}/messages`,
-    //   headers: {
-    //     Authorization: `Bearer ${GRAPH_API_TOKEN}`,
-    //   },
-    //   data: {
-    //     messaging_product: "whatsapp",
-    //     status: "read",
-    //     message_id: message.id,
-    //   },
-    // });
   }
 
   res.sendStatus(200);
