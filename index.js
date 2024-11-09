@@ -68,14 +68,14 @@ const handleMessage = async (userMessage, userId) => {
       const message = messageLine.replace('Message:', '').trim();
 
       // Send the email
-      await transporter.sendMail({
+      const info = await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: email,
         subject: subject,
         text: message
       });
 
-      return `Email sent successfully to ${email}!`;
+      return `Email sent successfully to ${email}!\nSubject: ${subject}\nMessage: ${message}\nMessage ID: ${info.messageId}`;
     } catch (error) {
       console.error("Error:", error.message);
       return `Failed to send email: ${error.message}`;
