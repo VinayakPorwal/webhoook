@@ -71,7 +71,9 @@ const handleMessage = async (userMessage, userId) => {
           emailAuthTokens.delete(email);
           return `Successfully authenticated with Composio for ${email}!`;
         } catch (error) {
-          return "Failed to authenticate with Composio. Please try again.";
+          console.error('Composio Authentication Error:', error.response?.data || error.message);
+          emailAuthTokens.delete(email); // Clean up the token if authentication fails
+          return `Authentication failed. Error: ${error.response?.data?.message || error.message}. Please try again with 'authenticate your@email.com'`;
         }
       }
     }
