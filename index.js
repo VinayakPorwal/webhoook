@@ -43,7 +43,6 @@ const handleMessage = async (userMessage, userId) => {
     if (!content) {
       return "Please provide a message to send. Format: /email recipient@email.com your message";
     }
-
     try {
       // Use AI to generate email subject and enhanced message
       const aiResponse = await axios.post(
@@ -51,7 +50,18 @@ const handleMessage = async (userMessage, userId) => {
         {
           contents: [{
             parts: [{
-              text: `Write a professional email subject line and enhance the following message while maintaining its core meaning: ${content}. Return in format - Subject: <subject>\nMessage: <message>`
+              text: `You are a professional email assistant. Your task is to:
+              1. Create a clear, concise subject line that reflects the email content
+              2. Enhance the message to be more professional while keeping the original meaning
+              3. Ensure proper email formatting
+              
+              Original message: ${content}
+              
+              Respond in this exact format:
+              Subject: <write the subject line here>
+              Message: <write the enhanced message here>
+              
+              Keep the response focused and professional.`
             }]
           }]
         },
@@ -62,16 +72,25 @@ const handleMessage = async (userMessage, userId) => {
         }
       );
 
-      const aiText = aiResponse.data.candidates[0].content.parts[0].text;
-      const [subjectLine, messageLine] = aiText.split('\n');
-      
-      // Add validation for subject and message
-      if (!subjectLine || !messageLine) {
-        throw new Error("Failed to generate email subject or message");
+      console.log('AI Response:', JSON.stringify(aiResponse.data, null, 2));
+
+      // Validate AI response structure
+      if (!aiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        throw new Error("Invalid AI response format");
       }
 
-      const subject = subjectLine.replace('Subject:', '').trim();
-      const message = messageLine.replace('Message:', '').trim();
+      const aiText = aiResponse.data.candidates[0].content.parts[0].text;
+      console.log('Extracted AI Text:', aiText);
+      // Use regex to more reliably extract subject and message
+      const subjectMatch = aiText.match(/Subject:\s*(.+?)(?=\n|$)/);
+      const messageMatch = aiText.match(/Message:\s*(.+?)(?=\n|$)/);
+
+      if (!subjectMatch?.[1] || !messageMatch?.[1]) {
+        throw new Error("Could not parse subject or message from AI response");
+      }
+
+      const subject = subjectMatch[1].trim();
+      const message = messageMatch[1].trim();
 
       // Validate that subject and message are not empty after processing
       if (!subject || !message) {
