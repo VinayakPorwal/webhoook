@@ -50,20 +50,30 @@ const handleMessage = async (userMessage, userId) => {
         {
           contents: [{
             parts: [{
-              text: `You are a professional email assistant. Your task is to:
-              1. Create a clear, concise subject line that reflects the email content
-              2. Enhance the message to be more professional while keeping the original meaning
-              3. Ensure proper email formatting
+              text: `You are a professional email assistant. 
               
               Original message: ${content}
+              
+              If the original message contains "set subject exactly this -" followed by text in quotes,
+              use that exact text as the subject. Otherwise, create a suitable subject.
+
+              If the message contains "from:" followed by a name, use that name as the sender name.
+              Otherwise use the name extracted from ${process.env.EMAIL_USER}.
+              
+              Your task is to:
+              1. Extract subject if specified, otherwise create one
+              2. Extract sender name if specified, otherwise extract from email
+              3. Enhance the message to be more professional while keeping the original meaning
+              4. Ensure proper email formatting
               
               Respond in valid JSON format like this:
               {
                 "subject": "Subject line here",
-                "message": "Enhanced message here"
+                "message": "Enhanced message here",
+                "senderName": "Name here"
               }
               
-              Keep the response focused and professional. Only return the JSON object, no other text.`
+              Only return the JSON object, no other text.`
             }]
           }]
         },
