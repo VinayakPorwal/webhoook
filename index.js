@@ -64,8 +64,19 @@ const handleMessage = async (userMessage, userId) => {
 
       const aiText = aiResponse.data.candidates[0].content.parts[0].text;
       const [subjectLine, messageLine] = aiText.split('\n');
+      
+      // Add validation for subject and message
+      if (!subjectLine || !messageLine) {
+        throw new Error("Failed to generate email subject or message");
+      }
+
       const subject = subjectLine.replace('Subject:', '').trim();
       const message = messageLine.replace('Message:', '').trim();
+
+      // Validate that subject and message are not empty after processing
+      if (!subject || !message) {
+        throw new Error("Generated email subject or message is empty");
+      }
 
       // Send the email
       const info = await transporter.sendMail({
