@@ -57,11 +57,13 @@ const handleMessage = async (userMessage, userId) => {
               
               Original message: ${content}
               
-              Respond in this exact format:
-              Subject: <write the subject line here>
-              Message: <write the enhanced message here>
+              Respond in valid JSON format like this:
+              {
+                "subject": "Subject line here",
+                "message": "Enhanced message here"
+              }
               
-              Keep the response focused and professional.`
+              Keep the response focused and professional. Only return the JSON object, no other text.`
             }]
           }]
         },
@@ -81,19 +83,24 @@ const handleMessage = async (userMessage, userId) => {
 
       const aiText = aiResponse.data.candidates[0].content.parts[0].text;
       console.log('Extracted AI Text:', aiText);
-      // Use regex to more reliably extract subject and message
-      const subjectMatch = aiText.match(/Subject:\s*(.+?)(?=\n|$)/);
-      const messageMatch = aiText.match(/Message:\s*(.+?)(?=\n|$)/);
 
-      if (!subjectMatch?.[1] || !messageMatch?.[1]) {
-        throw new Error("Could not parse subject or message from AI response");
+      // Parse the JSON response
+      let emailData;
+      try {
+        emailData = JSON.parse(aiText);
+      } catch (error) {
+        throw new Error("Failed to parse AI response as JSON");
       }
 
-      const subject = subjectMatch[1].trim();
-      const message = messageMatch[1].trim();
+      // Validate the email data structure
+      if (!emailData.subject || !emailData.message) {
+        throw new Error("Invalid email data structure");
+      }
 
-      // Validate that subject and message are not empty after processing
-      if (!subject || !message) {
+      const { subject, message } = emailData;
+
+      // Validate that subject and message are not empty
+      if (!subject.trim() || !message.trim()) {
         throw new Error("Generated email subject or message is empty");
       }
 
