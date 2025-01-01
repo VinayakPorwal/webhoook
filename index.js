@@ -1,5 +1,7 @@
 const express = require("express");
 const axios = require("axios");
+const { getPNRDetails } = require("./getPNR");
+const { sendEmail } = require("./sendEmail");
 
 
 const app = express();
