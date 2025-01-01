@@ -1,3 +1,5 @@
+const { chromium } = require("playwright");
+
 async function getPNRDetails(pnrNumber) {
   try {
     // Launch browser
@@ -85,3 +87,5 @@ async function getPNRDetails(pnrNumber) {
 }
 
 module.exports = { getPNRDetails };
+
+ 
