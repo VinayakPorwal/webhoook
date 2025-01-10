@@ -122,6 +122,6 @@ const getPNRDetails = async (pnrNumber) => {
 module.exports = {getPNRDetails};
 
 
-getPNRDetails("4525018046").then((pnrDetails) => {
-  console.log(pnrDetails);
-});
+// getPNRDetails("4525018046").then((pnrDetails) => {
+//   console.log(pnrDetails);
+// });
