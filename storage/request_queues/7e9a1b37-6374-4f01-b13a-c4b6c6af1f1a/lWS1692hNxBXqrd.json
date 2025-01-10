@@ -1,0 +1,9 @@
+{
+	"id": "lWS1692hNxBXqrd",
+	"json": "{\"id\":\"lWS1692hNxBXqrd\",\"url\":\"https://www.confirmtkt.com/pnr-status/4525018046\",\"loadedUrl\":\"https://www.confirmtkt.com/pnr-status/4525018046\",\"uniqueKey\":\"https://www.confirmtkt.com/pnr-status/4525018046\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"__crawlee\":{\"state\":4}},\"handledAt\":\"2025-01-10T22:35:40.595Z\"}",
+	"method": "GET",
+	"orderNo": null,
+	"retryCount": 0,
+	"uniqueKey": "https://www.confirmtkt.com/pnr-status/4525018046",
+	"url": "https://www.confirmtkt.com/pnr-status/4525018046"
+}
