@@ -1,6 +1,6 @@
 const express = require("express");
 const axios = require("axios");
-const { getPNRDetails } = require("./getPNR");
+// const { getPNRDetails } = require("./getPNR");
 const { sendEmail } = require("./sendEmail");
 
 
@@ -32,7 +32,7 @@ const handleMessage = async (userMessage, userId) => {
 
   else if (userMessage.toLowerCase().startsWith("/pnr")) {
     const pnr = userMessage.split(" ")[1];
-    const pnrData = await getPNRDetails(pnr);
+    const pnrData = "not working";
     return pnrData;
   }
 
