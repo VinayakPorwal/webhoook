@@ -26,13 +26,13 @@ router.get('/pnr/:pnrNumber', async (req, res) => {
   const crawler = new crawlee.PlaywrightCrawler({
     navigationTimeoutSecs: 100000,
     requestQueue,
-    // launchContext: {
-    //   launchOptions: {
-    //     args: aws_chromium.args,
-    //     executablePath: await aws_chromium.executablePath(),
-    //     headless: true,
-    //   },
-    // },
+    launchContext: {
+      launchOptions: {
+        args: aws_chromium.args,
+        executablePath: await aws_chromium.executablePath(),
+        headless: true,
+      },
+    },
     async requestHandler({ page, request }) {
       try {
         // logger.info(`Processing: ${request.url}`);

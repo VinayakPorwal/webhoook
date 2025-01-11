@@ -1,12 +1,12 @@
 const express = require("express");
 const axios = require("axios");
-// const getPNRDetails= require("./getPNR");
+const getPNRDetails= require("./getPNR");
 const { sendEmail } = require("./sendEmail");
 
 
 const app = express();
 app.use(express.json());
-// app.use(getPNRDetails);
+app.use(getPNRDetails);
 require("dotenv").config();
 
 const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN;
