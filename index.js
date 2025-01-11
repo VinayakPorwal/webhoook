@@ -1,6 +1,6 @@
 const express = require("express");
 const axios = require("axios");
-const getPNRDetails= require("./getPNR");
+// const getPNRDetails= require("./getPNR");
 const { sendEmail } = require("./sendEmail");
 
 
@@ -33,9 +33,9 @@ const handleMessage = async (userMessage, userId) => {
 
   else if (userMessage.toLowerCase().startsWith("/pnr")) {
     const pnr = userMessage.split(" ")[1];
-      const pnrData = await fetch(`/pnr/${pnr}`);
-      const data = await pnrData.json();
-      return data.data.data;
+      // const pnrData = await fetch(`/pnr/${pnr}`);
+      // const data = await pnrData.json();
+      return "data.data.data";
   }
 
   // Add user message to history
