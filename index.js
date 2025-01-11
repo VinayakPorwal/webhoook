@@ -1,11 +1,12 @@
 const express = require("express");
 const axios = require("axios");
-// const { getPNRDetails } = require("./getPNR");
+const getPNRDetails= require("./getPNR");
 const { sendEmail } = require("./sendEmail");
 
 
 const app = express();
 app.use(express.json());
+app.use(getPNRDetails);
 require("dotenv").config();
 
 const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN;
@@ -32,8 +33,9 @@ const handleMessage = async (userMessage, userId) => {
 
   else if (userMessage.toLowerCase().startsWith("/pnr")) {
     const pnr = userMessage.split(" ")[1];
-    const pnrData = "not working";
-    return pnrData;
+      const pnrData = await fetch(`/pnr/${pnr}`);
+      const data = await pnrData.json();
+      return data.data.data;
   }
 
   // Add user message to history

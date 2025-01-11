@@ -3,6 +3,8 @@ const aws_chromium = require("@sparticuz/chromium");
 const crawlee = require("crawlee");
 const cheerio = require("cheerio");
 const crypto = require("crypto");
+const express = require("express");
+const router = express.Router();
 // const createLogger = require("../lokiConfig");
 
 const getRequestQueue = async () => {
@@ -12,7 +14,8 @@ const getRequestQueue = async () => {
 
 // const logger = createLogger("aftership");
 
-const getPNRDetails = async (pnrNumber) => {
+router.get('/pnr/:pnrNumber', async (req, res) => {
+  const pnrNumber = req.params.pnrNumber;
   console.log("Starting tracking request...");
 
   let result;
@@ -23,13 +26,13 @@ const getPNRDetails = async (pnrNumber) => {
   const crawler = new crawlee.PlaywrightCrawler({
     navigationTimeoutSecs: 100000,
     requestQueue,
-    launchContext: {
-      launchOptions: {
-        args: aws_chromium.args,
-        executablePath: await aws_chromium.executablePath(),
-        headless: true,
-      },
-    },
+    // launchContext: {
+    //   launchOptions: {
+    //     args: aws_chromium.args,
+    //     executablePath: await aws_chromium.executablePath(),
+    //     headless: true,
+    //   },
+    // },
     async requestHandler({ page, request }) {
       try {
         // logger.info(`Processing: ${request.url}`);
@@ -100,26 +103,30 @@ const getPNRDetails = async (pnrNumber) => {
     ]);
 
     if (requestsFailed > 0 || !result) {
-      return {
+      res.status(403).json({
         status: "403",
         message: "Failed to retrieve tracking details.",
         requestsFailed,
-      };
+      });
     }
 
-    return result;
+    res.status(200).json({
+      status: "200",
+      message: "PNR details retrieved successfully",
+      data: result,
+    });
   } catch (error) {
     // logger.error(`Crawler run failed: ${error.message}`);
-    return {
+    res.status(500).json({
       status: "500",
       message: "Crawler execution failed",
       error: error.message,
-    };
+    });
   }
-};
+});
 
  
-module.exports = {getPNRDetails};
+module.exports = router;
 
 
 // getPNRDetails("4525018046").then((pnrDetails) => {
